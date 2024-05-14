@@ -10,7 +10,7 @@ WIDTH, HEIGHT = 1600, 900  # ゲームウィンドウの幅，高さ
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-def check_bound(obj_rct:pg.Rect) -> tuple[bool, bool]:
+def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
     Rectの画面内外判定用の関数
     引数：こうかとんRect，または，爆弾Rect，またはビームRect
@@ -71,6 +71,8 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
+        self.state = "normal"  # 初期状態を"normal"に設定
+        self.hyper_life = 0  # 無敵状態の持続時間
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -88,6 +90,8 @@ class Bird(pg.sprite.Sprite):
         引数2 screen：画面Surface
         """
         sum_mv = [0, 0]
+        if key_lst[pg.K_LSHIFT]:
+            self.speed=20
         for k, mv in __class__.delta.items():
             if key_lst[k]:
                 sum_mv[0] += mv[0]
@@ -99,6 +103,20 @@ class Bird(pg.sprite.Sprite):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
+
+    def activate_hyper_mode(self, key_lst: list[bool]):
+        if key_lst[pg.K_0]:
+            self.state = "hyper"  # 無敵状態に変更
+            self.hyper_life = 500  # 無敵状態の持続時間
+
+    def handle_collision(self, other):
+        if self.state == "hyper":  # 無敵状態の場合
+            # 爆弾を破壊してスコアを上げる処理
+            self.score += 1
+            other.explode()
+        else:
+            # 通常の衝突処理
+            pass
 
 
 class Bomb(pg.sprite.Sprite):
