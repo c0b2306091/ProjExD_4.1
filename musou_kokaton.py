@@ -312,6 +312,24 @@ class Shield(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
+            
+class EMP:
+    def __init__(self, emys: Enemy, bombs: Bomb, screen: pg.Surface):
+        super().__init__()
+        for emy in emys:
+            emy.interval = float('inf')
+            emy.image = pg.transform.laplacian(emy.image)
+            emy.image.set_colorkey((0, 0, 0))
+            for bomb in bombs:
+                bomb.speed /= 2
+                bomb.state = "inactive"
+
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (255,255,0), (0, 0, WIDTH, HEIGHT))
+        self.image.set_alpha(120)
+        screen.blit(self.image, [0, 0])
+        pg.display.update()
+        time.sleep(0.5)2
 
 
 def main():
@@ -353,6 +371,11 @@ def main():
                 #Bキーが押されて、スコアが50以上あれば
                 shields.add(Shield(bird, 400)) #防御壁発動
                 score.value -= 50 #スコア-50
+
+            if event.type == pg.KEYDOWN and event.key == pg.K_e:  #Eを押したら
+                    if score.value > 20: #スコアが20以上になったら
+                        EMP(emys, bombs, screen)  #電磁パルス発動!
+                        score.value -= 20
 
         screen.blit(bg_img, [0, 0])
 
