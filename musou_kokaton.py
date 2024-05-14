@@ -88,6 +88,7 @@ class Bird(pg.sprite.Sprite):
         押下キーに応じてこうかとんを移動させる
         引数1 key_lst：押下キーの真理値リスト
         引数2 screen：画面Surface
+        aaaa
         """
         sum_mv = [0, 0]
         if key_lst[pg.K_LSHIFT]:
