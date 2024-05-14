@@ -329,7 +329,7 @@ class EMP:
         self.image.set_alpha(120)
         screen.blit(self.image, [0, 0])
         pg.display.update()
-        time.sleep(0.5)2
+        time.sleep(0.5)
 
 
 def main():
