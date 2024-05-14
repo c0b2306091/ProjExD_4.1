@@ -241,6 +241,25 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class EMP:
+    def __init__(self, emys: Enemy, bombs: Bomb, screen: pg.Surface):
+        super().__init__()
+        for emy in emys:
+            emy.interval = float('inf')
+            emy.image = pg.transform.laplacian(emy.image)
+            emy.image.set_colorkey((0, 0, 0))
+            for bomb in bombs:
+                bomb.speed /= 2
+                bomb.state = "inactive"
+
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image, (255,255,0), (0, 0, WIDTH, HEIGHT))
+        self.image.set_alpha(120)
+        screen.blit(self.image, [0, 0])
+        pg.display.update()
+        time.sleep(0.5)
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -262,6 +281,11 @@ def main():
                 return 0
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN and event.key == pg.K_e:  #Eを押したら
+                    if score.value > 20: #スコアが20以上になったら
+                        EMP(emys, bombs, screen)  #電磁パルス発動!
+                        score.value -= 20
+
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
