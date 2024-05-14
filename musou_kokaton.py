@@ -194,6 +194,27 @@ class Explosion(pg.sprite.Sprite):
             self.kill()
 
 
+import pygame as pg
+import sys
+
+class Gravity(pg.sprite.Sprite):
+    """
+    重力場に関するクラス
+    """
+    def __init__(self, life):
+        super().__init__()
+        self.life = life
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        pg.draw.rect(self.image,(0, 0, 0),(0, 0, WIDTH, HEIGHT)) #　Surfaceにrectをdrawする
+        self.image.set_alpha(128)  # 透明度を設定（0-255）
+        self.rect = self.image.get_rect()
+    
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
+
 class Enemy(pg.sprite.Sprite):
     """
     敵機に関するクラス
@@ -247,6 +268,11 @@ def main():
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     score = Score()
 
+
+    clock = pg.time.Clock()
+    score.value = 0  # 初期スコア（テスト用）
+    gravitys = pg.sprite.Group()
+
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
@@ -260,6 +286,13 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN and score.value >= 200:
+                    # スコアが200以上でリターンキー押下時に重力場を発動
+                    score.value -= 200
+                    gravitys.add(Gravity(400))
+
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
         screen.blit(bg_img, [0, 0])
@@ -272,7 +305,13 @@ def main():
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
 
+
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
+            exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            score.value += 10  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+
+        for emy in pg.sprite.groupcollide(emys, gravitys, True, False).keys():
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
             bird.change_img(6, screen)  # こうかとん喜びエフェクト
@@ -280,6 +319,10 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
+
+        for bomb in pg.sprite.groupcollide(bombs, gravitys, True, False).keys():
+            exps.add(Explosion(bomb, 50))
+            score.value += 1
 
         if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
@@ -298,9 +341,13 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        gravitys.update()
+        gravitys.draw(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
+
+
 
 
 if __name__ == "__main__":
