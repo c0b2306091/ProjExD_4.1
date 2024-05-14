@@ -45,6 +45,10 @@ class Bird(pg.sprite.Sprite):
         pg.K_DOWN: (0, +1),
         pg.K_LEFT: (-1, 0),
         pg.K_RIGHT: (+1, 0),
+        pg.K_w: (0, -1),
+        pg.K_s: (0, +1),
+        pg.K_a: (-1, 0),
+        pg.K_d: (+1, 0),
     }
 
     def __init__(self, num: int, xy: tuple[int, int]):
@@ -281,6 +285,34 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class Shield(pg.sprite.Sprite):
+    """
+    防御壁に関するクラス
+    """
+    def __init__(self, bird: Bird, life):
+        super().__init__()
+        self.life = life
+        self.image = pg.Surface((20, bird.rect.height * 2)) #高さ、幅を指定した空のSurfaceを生成
+        
+        pg.draw.rect(self.image, (0, 0, 255), (0, 0, 20, bird.rect.height * 2)) #青のと横幅20、こうかとんの2倍の高さの壁
+
+        vx , vy = bird.dire #こうかとんの向きを取得
+        angle = math.degrees(math.atan2(-vy, vx)) #角度をもとめる
+
+        self.image = pg.transform.rotozoom(self.image, angle, 1.0) #回転させる 
+        self.image.set_colorkey((0, 0, 0))
+        
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx + bird.rect.width * vx #向いている方向にこうかとんの中心から1体分ずらす
+        self.rect.centery = bird.rect.centery + bird.rect.height * vy
+        
+    def update(self):
+        self.life -= 1
+
+        if self.life < 0:
+            self.kill()
+
+            
 class EMP:
     def __init__(self, emys: Enemy, bombs: Bomb, screen: pg.Surface):
         super().__init__()
@@ -297,7 +329,7 @@ class EMP:
         self.image.set_alpha(120)
         screen.blit(self.image, [0, 0])
         pg.display.update()
-        time.sleep(0.5)
+        time.sleep(0.5)2
 
 
 def main():
@@ -308,7 +340,7 @@ def main():
 
 
     clock = pg.time.Clock()
-    score.value = 0  # 初期スコア（テスト用）
+    score.value = 1000  # 初期スコア（テスト用）
     gravitys = pg.sprite.Group()
 
     bird = Bird(3, (900, 400))
@@ -316,6 +348,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    shields = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -333,6 +366,12 @@ def main():
 
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+
+            if event.type == pg.KEYDOWN and event.key == pg.K_b and len(shields) == 0 and score.value >= 50:
+                #Bキーが押されて、スコアが50以上あれば
+                shields.add(Shield(bird, 400)) #防御壁発動
+                score.value -= 50 #スコア-50
+
             if event.type == pg.KEYDOWN and event.key == pg.K_e:  #Eを押したら
                     if score.value > 20: #スコアが20以上になったら
                         EMP(emys, bombs, screen)  #電磁パルス発動!
@@ -363,6 +402,10 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
+        for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.value += 1  # 1点アップ
+
         for bomb in pg.sprite.groupcollide(bombs, gravitys, True, False).keys():
             exps.add(Explosion(bomb, 50))
             score.value += 1
@@ -384,6 +427,8 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        shields.update()
+        shields.draw(screen)
         gravitys.update()
         gravitys.draw(screen)
         pg.display.update()
